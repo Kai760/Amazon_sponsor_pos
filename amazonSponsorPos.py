@@ -1,8 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import cv2
-import numpy as np
-from matplotlib import pyplot as plt
+import argparse
 
 
 def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
@@ -59,5 +58,9 @@ def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
 
 
 if __name__ == '__main__':
-    sponsor_pos = get_sponsor_pos('renzi.png', 'renziTarget.png')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--whole_img', type=str, default='renzi.png')
+    parser.add_argument('--target_img', type=str, default='renzi_target.png')
+    opt = parser.parse_args()
+    sponsor_pos = get_sponsor_pos(opt.whole_img, opt.target_img)
     print(f"今回の画像は{sponsor_pos}番目のスポンサープロダクトです。")
