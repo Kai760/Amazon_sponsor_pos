@@ -22,7 +22,7 @@ def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
     # ターゲット画像の大きさを変えながら一致するタイミングを探す
     # だいぶ雑なので、もし取り損ねていることがあったら教えてください。
     count = 1
-    while threshold < 0.90:
+    while threshold < 0.85:
         res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
         threshold = res.max() - 0.01
         print(threshold)
@@ -41,7 +41,7 @@ def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
 
     # スポンサープロダクトの位置を取得
     res_sponsor = cv2.matchTemplate(img_gray, sponsor, cv2.TM_CCOEFF_NORMED)
-    loc_sponsor = np.where(res_sponsor >= 0.85)
+    loc_sponsor = np.where(res_sponsor >= 0.8)
     distance = 10000
     sponsor_pos = 100
 
