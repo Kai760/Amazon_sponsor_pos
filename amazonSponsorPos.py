@@ -22,7 +22,7 @@ def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
     # ターゲット画像の大きさを変えながら一致するタイミングを探す
     # だいぶ雑なので、もし取り損ねていることがあったら教えてください。
     count = 1
-    while threshold < 0.85:
+    while threshold < 0.90:
         res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
         threshold = res.max() - 0.01
         print(threshold)
@@ -41,7 +41,7 @@ def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
 
     # スポンサープロダクトの位置を取得
     res_sponsor = cv2.matchTemplate(img_gray, sponsor, cv2.TM_CCOEFF_NORMED)
-    loc_sponsor = np.where(res_sponsor >= 0.8)
+    loc_sponsor = np.where(res_sponsor >= 0.85)
     distance = 10000
     sponsor_pos = 100
 
@@ -60,7 +60,7 @@ def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--whole_img', type=str, default='renzi.png')
-    parser.add_argument('--target_img', type=str, default='renziTarget.png')
+    parser.add_argument('--target_img', type=str, default='renzi_target.png')
     opt = parser.parse_args()
     sponsor_pos = get_sponsor_pos(opt.whole_img, opt.target_img)
     print(f"今回の画像は{sponsor_pos}番目のスポンサープロダクトです。")
