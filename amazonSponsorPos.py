@@ -10,79 +10,90 @@ def delete_left_sponsor(loc_sponsor):
     return loc_sponsor
 
 
-def get_sponsor_pos(whole_img, target_img, sponsor_img='sponsor/sponsor.png'):
-    # 画像の読み込み&この後の計算時間を考えてサイズを1/4へ
-    img_rgb = cv2.imread(whole_img)
-    img_rgb = cv2.resize(img_rgb, (int(img_rgb.shape[1] * 0.7), int(img_rgb.shape[0] * 0.7)))
-    # img_rgb = img_rgb[:, int(img_rgb.shape[1] * 0.24):]
-    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-    template = cv2.imread(target_img, 0)
-    template = cv2.resize(template, (int(template.shape[1] * 0.7), int(template.shape[0] * 0.7)))
-    template_base = template
-    w, h = template.shape[::-1]
-    sponsor = cv2.imread(sponsor_img, 0)
-    sponsor = cv2.resize(sponsor, (int(sponsor.shape[1] * 0.7), int(sponsor.shape[0] * 0.7)))
-    sponsor_base = sponsor
+def read_reshape_img(img_path, rate=0.7, color=0):
+    # グレースケールで読み込む
+    img = cv2.imread(img_path, color)
+    img = cv2.resize(img, (int(img.shape[1] * rate), int(img.shape[0] * rate)))
+    return img
+
+
+def get_template_img_pos(whole_img, target_img, threshold_goal, quality):
+    count = 1
+    target_org = target_img
+    org_w, org_h = target_org.shape[::-1]
     threshold = 0
-
-    # なぜかターゲット画像を取得した際に実際と違うサイズで取得される場合があるっぽいので、
-    # ターゲット画像の大きさを変えながら一致するタイミングを探す
-    # だいぶ雑なので、もし取り損ねていることがあったら教えてください。
-    count = 1
-    while threshold < 0.85:
-        res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-        threshold = res.max() - 0.01
-        print(threshold)
+    while threshold < threshold_goal:
+        res = cv2.matchTemplate(whole_img, target_img, cv2.TM_CCOEFF_NORMED)
+        threshold = res.max() - quality
+        print(f"\r{threshold}", end="")
         coef = count * 0.01
-        w, h = template.shape[::-1]
+        w, h = target_img.shape[::-1]
         if count % 2 == 0:
-            template = cv2.resize(template_base, (int(template_base.shape[1] * (1 - coef)),
-                                                  int(template_base.shape[0] * (1 - coef))))
+            target_img = cv2.resize(target_org, (int(org_w * (1 - coef)),
+                                                 int(org_h * (1 - coef))))
         else:
-            template = cv2.resize(template_base, (int(template_base.shape[1] * (1 + coef)),
-                                                  int(template_base.shape[0] * (1 + coef))))
+            target_img = cv2.resize(target_org, (int(org_w * (1 + coef)),
+                                                 int(org_h * (1 + coef))))
         count += 1
-    loc = np.where(res >= threshold)
-    pos_w, pos_h = loc[1][0], loc[0][0]
-    cv2.rectangle(img_rgb, (pos_w, pos_h), (pos_w + w, pos_h + h), (0, 0, 255), 2)
+    return threshold, res, w, h
 
 
-    # スポンサープロダクトの位置を取得
-    threshold=0
-    count = 1
-    while threshold < 0.58:
-        res_sponsor = cv2.matchTemplate(img_gray, sponsor, cv2.TM_CCOEFF_NORMED)
-        threshold = res_sponsor.max() - 0.1
-        print(threshold)
-        coef = count * 0.01
-        if count % 2 == 0:
-            sponsor = cv2.resize(sponsor_base, (int(sponsor_base.shape[1] * (1 - coef)),
-                                                  int(sponsor_base.shape[0] * (1 - coef))))
-        else:
-            sponsor = cv2.resize(sponsor_base, (int(sponsor_base.shape[1] * (1 + coef)),
-                                                  int(sponsor_base.shape[0] * (1 + coef))))
-        count += 1
+def non_max_supression(loc):
+    pts = []
+    for index, pt in enumerate(zip(*loc[::])):
+        if index == 0:
+            pts.append(pt)
+        min_dis = min([abs(pt[0] - pt_past[0]) + abs(pt[1] - pt_past[1])
+                   for pt_past in pts])
+        if min_dis > 30:
+            pts.append(pt)
+    y = np.array([pt[0] for pt in pts])
+    x = np.array([pt[1] for pt in pts])
+    return (y,x)
+
+
+def main(whole_img_path, target_img_path, sponsor_img='sponsor/sponsor.png'):
+    # 後の計算時間を考えてサイズをrate倍にする
+    img_rgb = read_reshape_img(whole_img_path, rate=0.7, color=1)
+    whole_img = read_reshape_img(whole_img_path, 0.7)
+    target = read_reshape_img(target_img_path, 0.7)
+    sponsor = read_reshape_img(sponsor_img, 0.7)
+
+    # ターゲット画像のサイズ感と全体画像のサイズ感を初めからある程度合わせたい。
+    # その他高速化手法を要検討
+    print("ターゲット画像位置取得")
+    threshold, res, target_w, target_h = get_template_img_pos(whole_img, target, 0.85, 0.01)
+    loc_target = np.where(res >= threshold)
+    loc_target = non_max_supression(loc_target)
+
+    print("\nスポンサープロダクト位置取得")
+    threshold, res_sponsor, sponsor_w, sponsor_h = get_template_img_pos(whole_img, sponsor, 0.58, 0.15)
     loc_sponsor = np.where(res_sponsor >= threshold)
-    distance = 10000
-    sponsor_pos = 100
-    delete_left_sponsor(loc_sponsor)
+    loc_sponsor = non_max_supression(loc_sponsor)
+    loc_sponsor = delete_left_sponsor(loc_sponsor)
 
     # スポンサープロダクトの何番目かを計算
-    for index, pt in enumerate(zip(*loc_sponsor[::-1])):
-        cv2.rectangle(img_rgb, pt, (pt[0] + sponsor.shape[1], pt[1] + sponsor.shape[0]), (0, 0, 255), 2)
-        temp_distance = abs(pt[0] - pos_w) + abs(pt[1] - (pos_h + h))
-        if temp_distance < distance and abs(temp_distance-distance)>10:
-            distance = temp_distance
-            sponsor_pos = index + 1
+    distance = 10000
+    sponsor_pos = 100
+    for target_cand in zip(*loc_target[::-1]):
+        pos_w = target_cand[0]
+        pos_h = target_cand[1]
+        cv2.rectangle(img_rgb, target_cand, (pos_w + target_w, pos_h + target_h), (0, 0, 255), 2)
+        for index, pt in enumerate(zip(*loc_sponsor[::-1])):
+            cv2.rectangle(img_rgb, pt, (pt[0] + sponsor_w, pt[1] + sponsor_h), (0, 0, 255), 2)
+            temp_distance = abs(pt[0] - pos_w) + abs(pt[1] - (pos_h + target_h))
+            if temp_distance < distance:
+                distance = temp_distance
+                sponsor_pos = index + 1
 
-    cv2.imwrite('res.png', img_rgb)
+    cv2.imwrite('result.png', img_rgb)
     return sponsor_pos
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--whole_img', type=str, default='display.png')
-    parser.add_argument('--target_img', type=str, default='target_display_2.png')
+    parser.add_argument('--whole_img', type=str, default='./data/whole_renzi.png')
+    parser.add_argument('--target_img', type=str, default='./data/target_renzi.png')
     opt = parser.parse_args()
-    sponsor_pos = get_sponsor_pos(opt.whole_img, opt.target_img)
-    print(f"今回の画像は{sponsor_pos}番目のスポンサープロダクトです。")
+    sponsor_pos = main(opt.whole_img, opt.target_img)
+    print(f"\n今回の画像は{sponsor_pos}番目のスポンサープロダクトです。")
