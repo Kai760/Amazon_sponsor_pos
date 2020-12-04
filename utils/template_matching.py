@@ -1,15 +1,15 @@
 import numpy as np
 import cv2
 
-def delete_not_aimed_sponsor(loc_sponsor, rate, left_sponsor_pos=300, top_sponsor_pos=800):
+
+def delete_not_aimed_sponsor(loc_sponsor, ref_length, left_sponsor_rate=0.15, right_sponsor_rate=0.85):
     # 左端に出ている広告と、右上に出ているスポンサーの説明はカウントしないよう消す
-    left_id = np.argmin(loc_sponsor[1])
-    if loc_sponsor[1][left_id] < left_sponsor_pos * rate:
-        loc_sponsor = np.delete(loc_sponsor, left_id, axis=1)
-    top_id = np.argmin(loc_sponsor[0])
-    if loc_sponsor[0][top_id] < top_sponsor_pos * rate:
-        loc_sponsor = np.delete(loc_sponsor, top_id, axis=1)
-    return loc_sponsor
+    left = ref_length * left_sponsor_rate
+    right = ref_length * right_sponsor_rate
+    loc_return = (np.delete(loc_sponsor[0], np.where((loc_sponsor[1] < left) | (right < loc_sponsor[1]))),
+                  np.delete(loc_sponsor[1], np.where((loc_sponsor[1] < left) | (right < loc_sponsor[1]))))
+
+    return loc_return
 
 
 def non_max_supression(loc):
@@ -44,6 +44,7 @@ def get_template_pos(whole_img, target_img, threshold_goal, quality):
                                                  int(org_h * (1 + coef))))
         print(f"\rcount={count}, threshold={threshold}", end="")
         count += 1
+        # 50回（元の0.5~1.5倍まで）試してなかったらないものとする。ここの調整は要検討
         if count == 50:
             return (), -1, -1
     w, h = target_img.shape[::-1]
