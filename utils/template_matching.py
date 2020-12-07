@@ -12,6 +12,15 @@ def delete_not_aimed_sponsor(loc_sponsor, ref_length, left_sponsor_rate=0.15, ri
     return loc_return
 
 
+def resize_detected_box(w, h, allowed_size):
+    max_size = max(w, h, allowed_size)
+    if max_size != allowed_size:
+        rate = allowed_size / max_size
+        w = int(w * rate)
+        h = int(h * rate)
+    return w, h
+
+
 def non_max_supression(loc):
     pts = []
     for index, pt in enumerate(zip(*loc[::])):
@@ -26,7 +35,7 @@ def non_max_supression(loc):
     return (y, x)
 
 
-def get_template_pos(whole_img, target_img, threshold_goal, quality):
+def get_template_pos(whole_img, target_img, threshold_goal, quality, allowed_size=None):
     count = 1
     target_org = target_img
     org_w, org_h = target_org.shape[::-1]
@@ -48,5 +57,7 @@ def get_template_pos(whole_img, target_img, threshold_goal, quality):
         if count == 50:
             return (), -1, -1
     w, h = target_img.shape[::-1]
+    if allowed_size is not None:
+        w, h = resize_detected_box(w, h, allowed_size)
     loc = np.where(res >= (threshold - quality))
     return loc, w, h

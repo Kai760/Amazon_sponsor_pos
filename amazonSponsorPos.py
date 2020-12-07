@@ -8,12 +8,14 @@ from utils.template_matching import non_max_supression, delete_not_aimed_sponsor
 
 
 def print_result(sponsor_pos, start):
+    print("\n")
     if sponsor_pos == -1:
         print("target画像が見つかりませんでした。")
-        print(f"かかった時間は{round(time.time() - start, 2)}秒です")
+    elif sponsor_pos == 0:
+        print("SEOで表示された画像はありましたが、スポンサープロダクトではありませんでした。")
     else:
-        print(f"\nターゲットは{sponsor_pos}番目のスポンサープロダクトです。")
-        print(f"かかった時間は{round(time.time() - start, 2)}秒です")
+        print(f"ターゲットは{sponsor_pos}番目のスポンサープロダクトです。")
+    print(f"time = {round(time.time() - start, 2)}s")
 
 
 def main(whole_img_path, target_img_path, sponsor_img_path='sponsor/sponsor.png'):
@@ -24,7 +26,8 @@ def main(whole_img_path, target_img_path, sponsor_img_path='sponsor/sponsor.png'
 
     # その他高速化手法を要検討
     print("ターゲット画像位置取得")
-    loc_target, target_w, target_h = get_template_pos(images.whole_img, images.target_img, 0.95, 0.03)
+    loc_target, target_w, target_h = get_template_pos(images.whole_img, images.target_img, 0.95, 0.03,
+                                                      images.allowed_size)
     if len(loc_target) != 2:  # もし画像が見つからなければloc_targetは空のタプルを返す
         return -1
     loc_target = non_max_supression(loc_target)
@@ -47,17 +50,19 @@ def main(whole_img_path, target_img_path, sponsor_img_path='sponsor/sponsor.png'
             if temp_distance < distance:
                 distance = temp_distance
                 sponsor_pos = index + 1
+    # スポンサーに対する矩形かどうかを距離から確認
+    sponsor_pos = sponsor_pos if images.whole_w * 0.1 > distance else 0
 
-    # 結果を確認
+    # 結果確認
     cv2.imwrite(f'result_no{sponsor_pos}.png', images.img_rgb)
-    return sponsor_pos
+    return sponsor_pos, distance
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--whole_img', type=str, default='./data/whole_display.png')
-    parser.add_argument('--target_img', type=str, default='./data/target_display.png')
+    parser.add_argument('--whole_img', type=str, default='./data/whole_nanatsu.png')
+    parser.add_argument('--target_img', type=str, default='./data/target_nanatsu2.png')
     opt = parser.parse_args()
     start = time.time()
-    sponsor_pos = main(opt.whole_img, opt.target_img)
+    sponsor_pos, diestance = main(opt.whole_img, opt.target_img)
     print_result(sponsor_pos, start)

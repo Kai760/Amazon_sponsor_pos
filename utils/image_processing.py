@@ -8,8 +8,9 @@ class Images(object):
         self.whole_w = self.img_rgb.shape[1]
         self.whole_img = self._read_reshape_img(whole_img_path, self.rate)
         self.target_img = self._read_reshape_img(target_img_path, self.rate)
-        self.target_img = self._re_reshape_target_img(self.whole_w, self.target_img)
         self.sponsor_img = self._read_reshape_img(sponsor_img_path, self.rate)
+        self.allowed_size = int(self.whole_w * 0.25)  # これ以上大きい矩形は存在しない説
+        self.target_img = self._re_reshape_target_img(self.allowed_size, self.target_img)
 
     # 画像を読み込んで適宜小さくする
     def _read_reshape_img(self, img_path, rate=0.7, color=0):
@@ -19,9 +20,7 @@ class Images(object):
         return img
 
     # 読み込んだtarget画像が大きすぎた場合小さくする
-    def _re_reshape_target_img(self, base_width, target_img, allowed_max_rate=0.25):
-        # ターゲット画像の最大長は全体の横幅*rate倍まで(決め打ち）
-        allowed_size = base_width * allowed_max_rate
+    def _re_reshape_target_img(self, allowed_size, target_img):
         target_h, target_w = target_img.shape[:2]
         reduction_rate = max(allowed_size / target_h, allowed_size / target_w)
         if reduction_rate < 1.0:
