@@ -26,7 +26,7 @@ https://chrome.google.com/webstore/detail/gofullpage-full-page-scre/fdpohaocaech
 
 
 #### ③AmazonSponsorPos.pyを実行します。
-`python AmazonSponsorPos.py --whole_img=①の画像 --target_img=②の画像` 
+`python amazon_sponsor_pos.py --whole_img=①の画像 --target_img=②の画像` 
 でターゲット画像が何番目のスポンサープロダクトなのかを取得できます。  
 内部で実行されている `main()`はスポンサープロダクトの番号を返します。
 
