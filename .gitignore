@@ -1,7 +1,8 @@
 # ignore files
-.idea/
-runs/*
-data/
+test/*
+dataset/
+others/
+*.log
   
 # Byte-compiled / optimized / DLL files
 __pycache__/
