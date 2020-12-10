@@ -95,14 +95,14 @@ def debug(logger):
 
         logger.debug(f"{basename}:pos={sponsor_pos}, {time.time() - start}s")
         times.append(time.time() - start)
-        print_result(sponsor_pos, start)
+        print_result(sponsor_pos)
     logger.debug(f"mean = {sum(times) / len(times)}")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--whole_img', type=str, default='./test/whole_display.png')
-    parser.add_argument('--target_img', type=str, default='./test/target_display.png')
+    parser.add_argument('--whole_img', type=str, default='./dataset/golf/whole_golf.png')
+    parser.add_argument('--target_img', type=str, default='./dataset/golf/target_golf.png')
     parser.add_argument('--ini_path', type=str, default='./config.ini')
     opt = parser.parse_args()
     logger = setup_logger(f"{datetime.date.today()}.log")

@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 
-def delete_not_aimed_sponsor(loc_sponsor, ref_length, left_sponsor_rate=0.15, right_sponsor_rate=0.85):
+def delete_not_aimed_sponsor(loc_sponsor, ref_length, left_sponsor_rate=0.16, right_sponsor_rate=0.85):
     # 左端に出ているバナー広告の「スポンサー」と、右上に出ている「スポンサー」はカウントしないよう消す
     left = ref_length * left_sponsor_rate
     right = ref_length * right_sponsor_rate

@@ -17,6 +17,7 @@ class Images(object):
         self.img_rgb = self._read_reshape_img(whole_img_path, self.whole_rate, color=1)
         self.whole_w = self.img_rgb.shape[1]
         self.whole_img = self._read_reshape_img(whole_img_path, self.whole_rate)
+        self._crop_whole_images()
         self.target_img = self._read_reshape_img(self.target_img_path, self.target_rate)
         self.allowed_size = int(self.whole_w * 0.25)
         self.target_img = self._re_reshape_target_img(self.allowed_size, self.target_img)
@@ -30,7 +31,7 @@ class Images(object):
         # 画質重視なら最初から個別rate倍をする（これはこれで複数回行えば最適化されるはず）
         # img = cv2.resize(img, (int(img.shape[1] * rate), int(img.shape[0] * rate)))
         img = cv2.resize(img, (int(img.shape[1] * self.rate), int(img.shape[0] * self.rate)))
-        img = cv2.resize(img, (int(img.shape[1] * (rate/self.rate)), int(img.shape[0] *(rate/self.rate))))
+        img = cv2.resize(img, (int(img.shape[1] * (rate / self.rate)), int(img.shape[0] * (rate / self.rate))))
         return img
 
     # 読み込んだtarget画像が大きすぎた場合小さくする
@@ -79,3 +80,24 @@ class Images(object):
             config['DEFAULT']['sponsor'] = str(new_sponsor_rate)
             with open(self.ini_path, "w") as configfile:
                 config.write(configfile)
+
+    def _crop_whole_images(self):
+        # 画像左右の白枠を切る
+        h, w = self.whole_img.shape[:2]
+        img = self.whole_img[int(w * 0.2):int(w * 0.7), :]
+        img2 = cv2.threshold(img, 230, 255, cv2.THRESH_BINARY)[1]
+        w_min = 0
+        w_max = w - 1
+        pvalue_min = 255
+        pvalue_max = 255
+        while pvalue_min > 250:
+            pvalue_min = img2[:, w_min].mean()
+            w_min += 1
+        while pvalue_max > 250:
+            pvalue_max = img2[:, w_max].mean()
+            w_max -= 1
+        w_min = max(w_min - int(w * 0.03), 0)
+        w_max = min(w_max + int(w * 0.03), w)
+
+        self.whole_img = self.whole_img[:, w_min:w_max]
+        self.img_rgb = self.img_rgb[:, w_min:w_max]
