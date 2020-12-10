@@ -39,7 +39,7 @@ def reshape_template_img(count, target_org):
     return target_img
 
 
-def get_template_pos(whole_img, target_img, threshold_goal, quality):
+def get_template_position(whole_img, target_img, threshold_goal, quality):
     count = 0
     target_org = target_img.copy()
     threshold = 0
